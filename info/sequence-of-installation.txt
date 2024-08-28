@@ -1,0 +1,59 @@
+Sequence of installation
+========================
+
+Assumes Apache httpd is up and running with a redirect/proxy rule to https://server/heimdallr
+
+	- "heimdallr" is what we plan to use as the final name of your deployment
+
+Assumes JBoss source includes our custom standalone.xml file and an extra module.xml file under $JBOSS_HOME/modules/sun/jdk/main
+
+Our rpm will contain all of our resources including
+
+	- directory structure: /opt/ericsson/sso/resources
+	- OpenAM war file from Forgerock (our main 3PP for Single Sign On) renamed to heimdallr.war
+	- installation and configuration scripts. N.B. these are *not* run automatically as part of the rpm installation procedure
+	- JRE 1.6 installation script downloaded from http://www.oracle.com/technetwork/java/javasebusiness/downloads/java-archive-downloads-javase6-419409.html#jre-6u37-oth-JPR
+	- OpenAM configuration tools:
+		- these are zip files that we extract to a known location.
+		- they require on-the-fly created configuration options files and JRE 1.6 to run successfully
+	- Policy Agent zip archive:
+		- this is extracted to a known location, an on-the-fly config file is generated, and the script runs
+		- requires OpenAM server to be up, configured and contactable
+		- requires Apache httpd to be brought down and kept down while it's installation script runs
+		- also requires JRE 1.6
+
+
+Procedure:
+
+1.		Run rpm - resources are created where they need to go
+
+1.1		RPM post-install script will create "real" SSO home directory and create symbolic links to same. Also needs to change the ownership of this directory to the jboss user
+1.2		will also unpack OpenAM configuration and administration tools. Alternatively, we could package the RPM with these already extracted.
+1.3 	will also run JRE installation script
+
+2. 		WAR file and installation scripts now exist in known locations as per the LITP deployment descriptor
+
+3. 		LITP deploys the war file under "deployable-entity" definition
+
+4.	 	LITP enables the war file
+
+5.  	LITP runs the jboss_app/post-start hook script
+
+5.1 	This script configures OpenAM
+5.2		script also installs and configures Policy Agent
+5.2.1 	This script needs to contact the configured OpenAM server
+5.3 	configuration is via an options file
+5.4 	installation uses JRE 1.6
+5.5 	Script also runs the following SELinux commands:
+		
+		- chcon -u system_u -t httpd_modules_t $AGENT_HOME/lib/*
+
+		- chcon -u system_u -t httpd_config_t $AGENT_HOME/$CURRENT_AGENT_DIR/config/*
+
+		- chcon -R -t httpd_log_t $AGENT_HOME/$CURRENT_AGENT_DIR/logs
+
+		- setsebool -P httpd_can_network_connect true
+
+		Variables above are defined by us
+
+6. 		Restart Apache

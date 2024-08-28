@@ -1,0 +1,208 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>com.ericsson.nms</groupId>
+		<artifactId>integration</artifactId>
+		<version>13.2.0.81</version>
+	</parent>
+	<groupId>com.ericsson.nms.sso</groupId>
+	<artifactId>SingleSignOn</artifactId>
+	<version>1.7.2-SNAPSHOT</version>
+	<packaging>pom</packaging>
+	<name>Single Sign On</name>
+	<url>${project.documentation.url}/</url>
+	<organization>
+		<name>Ericsson</name>
+		<url>http://www.ericsson.com</url>
+	</organization>
+	<issueManagement>
+		<system>JIRA</system>
+		<url>${jira.url}</url>
+	</issueManagement>
+	<properties>
+
+		<version.jboss.as>7.1.2.Final-redhat-1</version.jboss.as>
+		<version.maven.required>3.0.3</version.maven.required>
+		<version.jboss-as-maven-plugin>${version.jboss.as}</version.jboss-as-maven-plugin>
+
+<!--
+MUST BE MANUALLY CHANGED WHENEVER WE RELEASE NEW API VERSION. MUST BE CONSTANT - DO NOT USE MAVEN VARIABLE!
+-->
+<currentSSODocs.version>1.0</currentSSODocs.version>
+<jira.url>
+	http://jira-oss.lmera.ericsson.se/browse/TORFTUISSO
+</jira.url>
+<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+<nexus.url>#</nexus.url>
+<project.documentation.url>
+	https://arm1s11-eiffel004.eiffel.gic.ericsson.se:8443/nexus/content/sites/tor/SingleSignOn_Documentation
+</project.documentation.url>
+</properties>
+
+<prerequisites>
+	<maven>${version.maven.required}</maven>
+</prerequisites>
+
+
+
+<modules> 
+	<module>singlesignon</module> 
+	<module>openam</module> 
+	<module>policyagent-apache</module>
+	<module>ERICsinglesignon_CXP9022934</module>
+</modules>
+
+
+
+
+<dependencies>
+	<dependency>
+		<groupId>junit</groupId>
+		<artifactId>junit</artifactId>
+		<version>4.10</version>
+		<scope>test</scope>
+	</dependency>
+</dependencies>
+
+
+
+
+<build>
+
+	<plugins>
+		<plugin>
+			<groupId>org.apache.maven.plugins</groupId>
+			<artifactId>maven-enforcer-plugin</artifactId>
+			<executions>
+				<execution>
+					<id>enforce-versions</id>
+					<goals>
+						<goal>enforce</goal>
+					</goals>
+					<configuration>
+						<rules>
+							<bannedDependencies>
+								<excludes>
+									<!-- <exclude>commons-logging:commons-logging:*:*:jar:compile</exclude>-->
+									<!--<exclude>log4j:log4j:*:*:jar:compile</exclude>-->
+								</excludes>
+							</bannedDependencies>
+						</rules>
+					</configuration>
+				</execution>
+			</executions>
+		</plugin>
+
+	</plugins>
+	<pluginManagement>
+		<plugins>
+				<!--This plugin's configuration is used to store Eclipse m2e settings 
+				only. It has no influence on the Maven build itself -->
+				<plugin>
+					<groupId>org.eclipse.m2e</groupId>
+					<artifactId>lifecycle-mapping</artifactId>
+					<version>1.0.0</version>
+					<configuration>
+						<lifecycleMappingMetadata>
+							<pluginExecutions>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>
+											org.apache.maven.plugins
+										</groupId>
+										<artifactId>
+											maven-dependency-plugin
+										</artifactId>
+										<versionRange>
+											[2.4,)
+										</versionRange>
+										<goals>
+											<goal>analyze-dep-mgt</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<ignore />
+									</action>
+								</pluginExecution>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>
+											org.apache.maven.plugins
+										</groupId>
+										<artifactId>
+											maven-enforcer-plugin
+										</artifactId>
+										<versionRange>
+											[1.1,)
+										</versionRange>
+										<goals>
+											<goal>enforce</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<ignore />
+									</action>
+								</pluginExecution>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>
+											com.ericsson.maven.plugins
+										</groupId>
+										<artifactId>
+											rstate-maven-plugin
+										</artifactId>
+										<versionRange>
+											[1.0,)
+										</versionRange>
+										<goals>
+											<goal>rstate</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<ignore />
+									</action>
+								</pluginExecution>
+							</pluginExecutions>
+						</lifecycleMappingMetadata>
+					</configuration>
+				</plugin>	
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+				        <artifactId>maven-javadoc-plugin</artifactId>
+				        <version>2.9</version>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+	</build>
+
+
+<!--
+for local creation of site. Run mvn site site:deploy
+-->
+<!--
+<distributionManagement> <site> <id>site</id> <name>Site</name> <url>file:///c:/env/site</url> </site> </distributionManagement>
+-->
+<distributionManagement>
+	<site>
+		<id>site</id>
+		<name>Site</name>
+		<url>
+			dav:${project.documentation.url}/${currentSSODocs.version}
+		</url>
+	</site>
+</distributionManagement>
+<reporting>
+	<plugins>
+		<plugin>
+			<groupId>org.apache.maven.plugins</groupId>
+			<artifactId>maven-project-info-reports-plugin</artifactId>
+			<version>2.5</version>
+			<reportSets>
+				<reportSet>
+					<reports />
+				</reportSet>
+			</reportSets>
+		</plugin>
+	</plugins>
+</reporting>
+</project>

@@ -1,0 +1,86 @@
+LITP / CMW questions
+====================
+
+* How to add Apache / mod_ssl to landscape/campaign/deployment
+  - request it from LITP?
+
+* How best to define custom JBoss instance
+  - Define requirements in plain English and provide this to LITP/CMW?
+  - Provide exact example of configuration needed? (changes to standalone-full-ha.xml and addition to $JBOSS_HOME/modules/sun/jdk/main/modules.xml)
+  - Perform modifications as part of installation scripts?
+
+* Should JBoss instance be outside of CMW cluster?
+
+* Best way to configure firewall rules/ports opened?
+  - Request them as part of LITP deployment/delivery?
+  - Add LITP commands (litp /definition/os/osms/fw_basetcp update dport etc)
+
+* Best way to configure SELinux?
+  - Same two points as above (but not LITP commands, standard SELinux config commands)
+
+
+
+
+What we would like to have as a baseline
+========================================
+
+* JRE 1.6 (latest update) extracted somewhere we can reference with a local $JAVA_HOME variable
+  - can be removed after final OpenAM / Policy Agent configuration
+
+* Single standalone JBoss configured
+  - Two extensions and subsystems removed - jaxrs/org.jboss.as.jaxrs and webservices/org.jboss.as.webservices
+  - Entry added to $JBOSS_HOME/modules/sun/jdk/main/module.xml
+    '<path name="sun/security/x509"/>'
+  - the above configurations are only needed when deploying to JBoss/other JEE container. Not needed for JSE container e.g., Tomcat
+
+* Apache installed, mod_ssl configured and valid certificate installed
+
+* All required ports to be opened in iptables
+
+* The UI login screen deployed and the web location known to us
+
+
+
+
+
+
+What environment information do we need to know to automate installation
+========================================================================
+
+COM-INF LDAP uri, ports, admin username/password, root suffix
+
+User store type (e.g., LDAPv3ForOpenDS)
+
+Location of OpenAM installation (directory on file system which jboss user can write to)
+
+
+
+
+
+Risks
+=====
+
+Post-installation of Policy Agent
+---------------------------------
+
+* Need to configure SELinux to allow new httpd module to load:
+	# setsebool -P httpd_can_network_connect true
+	# chcon -u system_u -t httpd_config_t /path/to/Agent_00x/config/*
+	# chcon -u system_u -t httpd_modules_t /path/to/policy-agent/lib/*
+	# chcon -R -t httpd_log_t /path/to/policy-agent/Agent-00x/logs
+
+* Need to add config file to /etc/httpd/conf.d/10_sso_enabled.conf
+
+* Need to modify properties files to configure SSL and sub-realm (OpenAM-specific term)
+
+Will these changes persist once Apache httpd is part of a CoreMiddleWare campaign?
+
+
+Environment information
+-----------------------
+
+If we choose the OpenAM installation directory and change the system ownership (to say, jboss-eap:jboss-eap), will this change in ownership persist under CMW/LITP? (It hasn't been a problem so far in the LITP sprint releases)
+
+Installation of Policy Agent attempts to modify main httpd.conf file (which we need to go back and undo via a script). Once Apache httpd is under CMW, will this break any scripts attempting to modify it?
+
+PA also needs Apache httpd to be shutdown during installation. Will this be possible once Apache httpd is under CMW?

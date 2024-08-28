@@ -1,0 +1,21 @@
+Apache requirements
+===================
+
+Module (installed via installer script that needs apache shut down during its run)
+
+	dsame_module.so (provided by installer package)
+
+	This script will attempt to modify main httpd.conf file, which should be replaced afterward with the backup (which
+	the script generates). The modification to httpd.conf should go in a separate SSO-configured .conf file in
+	/etc/httpd/conf.d/
+
+Policy agent config/lib/log directories need to be configured for SELinux. Sample config:
+
+	# setsebool httpd_can_network_connect true
+	# chcon -u system_u -t httpd_config_t /path/to/Agent_00x/config/*
+	# chcon -u system_u -t httpd_modules_t /path/to/policy-agent/lib/*
+	# chcon -R -t httpd_log_t /path/to/policy-agent/Agent-00x/logs
+
+Load balancer config with SSL-offloading (mod_ajp, mod_jk or jboss proxy-port workaround)
+
+JBoss/container instance outside of JBoss cluster

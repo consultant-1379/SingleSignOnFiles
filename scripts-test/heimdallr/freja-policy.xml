@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE Policies 
+PUBLIC "-//OpenSSO Policy Administration DTD//EN"
+"jar://com/sun/identity/policy/policyAdmin.dtd">
+
+<!-- extracted from realm, FREJA -->
+<Policies>
+	<Policy name="FREJA-policy-all2" referralPolicy="false" active="true" >
+		<Rule name="FREJA-policy-all-rule2">
+			<ServiceName name="iPlanetAMWebAgentService" />
+			<ResourceName name="http://app.example.com/app2/*" />
+			<ResourceName name="http://app.example.com/app2/*?*" />
+			<AttributeValuePair>
+				<Attribute name="POST" />
+				<Value>allow</Value>
+			</AttributeValuePair>
+			<AttributeValuePair>
+				<Attribute name="GET" />
+				<Value>allow</Value>
+			</AttributeValuePair>
+		</Rule>
+		<Subjects name="Subjects:1358094052580rstt+9E=" description="">
+			<Subject name="FREJA-policy-all-subject2" type="AuthenticatedUsers" includeType="inclusive">
+			</Subject>
+		</Subjects>
+		<Conditions name="null" description="null">
+			<Condition name="FREJA-policy-all-condition2" type="SimpleTimeCondition">
+				<AttributeValuePair><Attribute name="EndTime"/><Value>17:30</Value>
+				</AttributeValuePair>
+				<AttributeValuePair><Attribute name="StartTime"/><Value>09:00</Value>
+				</AttributeValuePair>
+			</Condition>
+		</Conditions>
+	</Policy>
+</Policies>

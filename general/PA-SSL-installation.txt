@@ -1,0 +1,416 @@
+
+After standart PA installation:
+
+	1.	Add the certificates for both PA and OpenAM
+		Ref:	http://docs.oracle.com/cd/E19681-01/821-0266/girvo/index.html
+		
+		Notes:
+			Installing the Oracle OpenSSO Root CA Certificate on the Apache HTTP Server Instance
+			======================================================================================
+				The root CA certificate that you install on the Apache HTTP Server instance must be the same certificate that is installed on the Oracle OpenSSO host server.
+				Oracle provides the Certificate Database Tool, certutil, in the Apache HTTP Server agent distribution file, to manage the root CA certificate and the certificate database.
+				
+				Ref about certutil:	certutil:		http://www.mozilla.org/projects/security/pki/nss/tools/certutil.html
+				
+				
+				1. 	Obtain the root CA certificate file that is installed on the OpenSSO host server (Apache Web server for openAM).  
+					Currently that is the deafult Apache's certificate infront of openAM server.  Store it in .cer, .crt, .der form (it MUST be in its bynary fomat). 
+					Make sure the certificate contains the chain of certificate issuers too! Do not obtain the cert online(i.e using the openssl or other tool)
+					When runnig the installation script make sure a cert for the PA and openAM server is available and installed on each side.
+					
+				
+					Run to read the remote certificate:	
+						openssl s_client -connect atclvm589.athtem.eei.ericsson.se:443 2>&1 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p'	> yourcert.pem			
+					Find out how to pipe the cert in a binary fomrat with openssl? Ideally have the cert before hand so that no need OpenSSO server to be running or have connection.
+					Ref:	http://support.citrix.com/article/CTX106631		
+						openssl x509 -in openam.pem -inform PEM -out openam.crt -outform DER						
+					
+				2.	On the PA host locate the PA certutil utility. Its currunt location is :	/var/opt/policy-agents/web_agents/apache22_agent/bin/certutil
+					Note: Please use the certutil provided by hte PA and not from the OS to avoid versions inconsistency
+				
+				3.	Set the LD_LIBRARY_PATH environment variable to the location of the certutil library files located ate:		/var/opt/policy-agents/web_agents/apache22_agent/lib
+						export LD_LIBRARY_PATH=/var/opt/policy-agents/web_agents/apache22_agent/lib
+				
+				4.	Create the certificate database using certutil. Provide a password. Currently the pasword is:  password
+						./certutil -N -d /var/opt/policy-agents/sslcerts (create this folder beforehand)
+				
+				5.	Add the Oracle OpenSSO root CA certificate to the database using certutil.
+					./certutil -A -n cert-name -t "C,C,C" -d /var/opt/policy-agents/sslcerts -i cert-request-file
+					
+					where:
+						-	cert-name is the alias of the Oracle OpenSSO root CA certificate   (openam used).
+						-	cert-request-file is the binary root CA certificate request file that was obatained in step 1 (.cer, .crt, .der  file).
+				
+				6.	Verify that the root CA certificate is installed correctly, use certutil with the -L option.				
+						./certutil -L -d /var/opt/policy-agents/sslcerts
+						
+					You should see the name of the root CA certificate.
+				
+				7.	Restart the Apache HTTP Server instance.				
+					
+							
+					
+					
+			
+	2.  Edit the Policy Agent Bootstrap file	/var/opt/policy-agents/web_agents/apache22_agent/Agent_xxx/config/OpenSSOAgentBootstrap.properties
+		to have the folowing parameters:
+			com.sun.identity.agents.config.sslcert.dir = /var/opt/policy-agents/sslcerts
+			com.sun.identity.agents.config.certdb.prefix =
+			com.sun.identity.agents.config.certdb.password = password
+			com.sun.identity.agents.config.certificate.alias = openam
+			com.sun.identity.agents.config.trust.server.certs = false
+		
+		Ref:	http://docs.oracle.com/cd/E19575-01/820-7797/gimgp/index.html
+		
+	3.	Modify the file /etc/sysconfig/httpd by adding these at the end of the file:
+			export NSS_STRICT_NOFORK=DISABLED
+			export NSS_STRICT_SHUTDOWN=""
+	
+	4.	Restart the Apache HTTP Server instance.
+	
+		Ref:	http://eldapo.lembobrothers.com/2012/07/30/two-quirks-with-openam-web-agents/
+
+
+
+
+Error codes in Policy Agent debug logs
+======================================
+
+Error codes like -12276 and -8023 in /opt/web_agents/apache22_agent/Agent_xxx/logs/debug/amAgent are SSL error codes. Reference here
+
+	http://www.mozilla.org/projects/security/pki/nss/ref/ssl/sslerr.html
+
+
+Local Host on openAM server SSL-setup JBoss
+==============================================================================
+1.  Obtain certificate from Apache WS on 589.
+2.	Create your keystore  
+	keytool -genkey -alias openam -keystore truststore.jks
+
+		(password for openam.keystore is: 	password )
+		(password for <openam>:	password)
+3.	Import the certificate into the your keystore:	
+		keytool -keystore openam.keystore -keyalg RSA -import -trustcacerts -alias "openam" -storepass password -file localhost.crt
+
+3.	Configure Jboss for SSL connection
+	
+	<subsystem xmlns="urn:jboss:domain:web:1.1" default-virtual-server="default-host" native="false">
+	  <connector name="http" protocol="HTTP/1.1" scheme="http" socket-binding="http"  redirect-port="443" />
+	 
+			<connector name="https" scheme="https" protocol="HTTP/1.1" socket-binding="https" enable-lookups="false" secure="true">
+				<ssl name="openam" password="password" protocol="TLSv1" key-alias="openam" certificate-key-file="../standalone/configuration/localhost.crt" />
+			</connector>
+	  
+	  
+	  ...
+	</subsystem>
+
+
+
+ 
+C:\Program Files\Java\jdk1.7.0_07\jre\lib\security\cacerts
+
+
+
+
+Create an empty keystore
+	keytool -genkey -alias myalias -keystore truststore.jks
+	keytool -delete -alias myalias -keystore truststore.jks
+	
+	keystore password:	password
+	Enter key password for <myalias>	password
+
+Import a (signed) certificate into a JKS keystore
+	keytool -import -keystore truststore.jks -storepass "password" -alias openam -file localhost.crt
+
+
+
+
+keytool -list -keystore truststore.jks -storepass password
+
+
+
+------------------------------------------------------------------------------------------------------------------------------------------
+To delete entry from keystore:	keytool -delete -alias "openam-localhost" -keystore openam.keystore -storepass password
+------------------------------------------------------------------------------------------------------------------------------------------
+Verify: 						keytool -list -keystore openam.keystore -storepass password
+------------------------------------------------------------------------------------------------------------------------------------------
+Import it into the local JKS:	keytool -keystore openam.keystore -keyalg RSA -import -trustcacerts -alias "openam-localhost" -storepass password -file localhost.crt
+------------------------------------------------------------------------------------------------------------------------------------------
+
+
+			<connector name="https" scheme="https" protocol="HTTP/1.1" socket-binding="https" enable-lookups="false" secure="true">
+				<ssl name="openam" password="changeit" protocol="TLSv1" key-alias="openam-localhost" certificate-key-file="C:\Program Files\Java\jdk1.7.0_07\jre\lib\security\cacerts"/>
+			</connector>
+
+
+
+
+==============================================================================
+
+
+
+
+
+2.	Generate public-private key pair. Specifies the alias for the public-private key pair. 
+
+	keytool -genkey -alias openam-localhost -keyalg RSA -keystore openam.keystore -validity 10950
+	
+	
+	keystore password:	password
+	What is your first and last name:  www.ericsson.com
+	What is the name of your organizational unit:	tor
+	What is the name of your organization:	ericsson
+	What is the name of your City or Locality: athlone
+	What is the name of your State or Province:	westmeath
+	What is the two-letter country code for this unit:	ie
+	
+	Enter key password for <openam-localhost>:	password
+	
+	keytool -genkey -alias openam-localhost -keyalg RSA -keystore openam.keystore -storepass password -validity 10950 
+
+Import certificate:	keytool -keystore "C:\Program Files\Java\jdk1.7.0_07\jre\lib\security\cacerts" -keyalg RSA -import -trustcacerts -alias "openam-localhost" -storepass changeit -file atclvm589.athtem.eei.ericsson.se.crt
+
+
+
+
+
+
+
+
+************************************************************************
+Welcome to the OpenSSO Policy Agent for Apache Server.
+
+************************************************************************
+
+
+Enter the complete path to the directory which is used by Apache Server to
+store its configuration Files. This directory uniquely identifies the
+Apache Server instance that is secured by this Agent.
+[ ? : Help, ! : Exit ]
+Enter the Apache Server Config Directory Path [/opt/apache22/conf]: /etc/httpd/conf
+
+
+Enter the URL where the OpenSSO server is running. Please include the
+deployment URI also as shown below:
+(http://opensso.sample.com:58080/opensso)
+[ ? : Help, < : Back, ! : Exit ]
+OpenSSO server URL: https://atclvm589.athtem.eei.ericsson.se:443/openam
+
+
+Enter the Agent URL as shown below: (http://agent1.sample.com:1234)
+[ ? : Help, < : Back, ! : Exit ]
+Agent URL: https://atclvm590.athtem.eei.ericsson.se:443
+
+
+Enter the Agent profile name
+[ ? : Help, < : Back, ! : Exit ]
+Enter the Agent Profile name: TOR
+
+
+Enter the path to a file that contains the password to be used for identifying
+the Agent.
+[ ? : Help, < : Back, ! : Exit ]
+Enter the path to the password file: /tmp/pass.txt
+
+
+WARNING:
+Password validation cannot be done as OpenSSO server is not running.
+
+
+
+-----------------------------------------------
+SUMMARY OF YOUR RESPONSES
+-----------------------------------------------
+Apache Server Config Directory : /etc/httpd/conf
+OpenSSO server URL :
+https://atclvm589.athtem.eei.ericsson.se:443/openam
+Agent URL : https://atclvm590.athtem.eei.ericsson.se:443
+Agent Profile name : TOR
+Agent Profile Password file name : /tmp/pass.txt
+
+Verify your settings above and decide from the choices below.
+1. Continue with Installation
+2. Back to the last interaction
+3. Start Over
+4. Exit
+Please make your selection [1]: 1
+
+Creating directory layout and configuring Agent file for Agent_002
+instance ...DONE.
+
+Reading data from file /tmp/pass.txt and encrypting it ...DONE.
+
+Generating audit log file name ...DONE.
+
+Creating tag swapped OpenSSOAgentBootstrap.properties file for instance
+Agent_002 ...DONE.
+
+Creating a backup for file /etc/httpd/conf/httpd.conf ...DONE.
+
+Adding Agent parameters to
+/var/opt/policy-agents/web_agents/apache22_agent/Agent_002/config/dsame.conf
+file ...DONE.
+
+Adding Agent parameters to /etc/httpd/conf/httpd.conf file ...DONE.
+
+
+SUMMARY OF AGENT INSTALLATION
+-----------------------------
+Agent instance name: Agent_002
+Agent Bootstrap file location:
+/var/opt/policy-agents/web_agents/apache22_agent/Agent_002/config/OpenSSOAgentBootstrap.properties
+Agent Configuration Tag file location
+/var/opt/policy-agents/web_agents/apache22_agent/Agent_002/config/OpenSSOAgentConfiguration.properties
+Agent Audit directory location:
+/var/opt/policy-agents/web_agents/apache22_agent/Agent_002/logs/audit
+Agent Debug directory location:
+/var/opt/policy-agents/web_agents/apache22_agent/Agent_002/logs/debug
+
+
+Install log file location:
+/var/opt/policy-agents/web_agents/apache22_agent/installer-logs/audit/install.log
+
+Thank you for using OpenSSO Policy Agent
+
+[root@atclvm590 bin]#
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+com.sun.identity.agents.config.cdsso.enable=false
+com.sun.identity.agents.config.get.client.host.name=false
+com.sun.identity.agents.config.profile.attribute.fetch.mode=NONE
+com.sun.identity.agents.config.cleanup.interval=30
+com.sun.identity.agents.config.fqdn.check.enable=true
+com.sun.identity.agents.config.notenforced.url.attributes.enable=false
+com.sun.identity.agents.config.notenforced.url[0]=
+com.sun.identity.agents.config.ignore.preferred.naming.url=true
+sunIdentityServerDeviceStatus=Active
+com.sun.identity.agents.config.login.url[0]=https://atclvm589.athtem.eei.ericsson.se:443/openam/UI/Login
+com.sun.identity.agents.config.audit.accesstype=LOG_NONE
+com.sun.identity.agents.config.logout.cookie.reset[0]=
+com.sun.identity.agents.config.proxy.override.host.port=false
+com.sun.identity.agents.config.load.balancer.enable=false
+sunIdentityServerDeviceKeyValue[0]=agentRootURL=https://atclvm590.athtem.eei.ericsson.se:443/
+com.sun.identity.agents.config.convert.mbyte.enable=false
+com.sun.identity.agents.config.domino.check.name.database=false
+com.sun.identity.agents.config.encode.url.special.chars.enable=false
+com.sun.identity.agents.config.iis.owa.enable=false
+com.sun.identity.agents.config.override.port=false
+com.sun.identity.agents.config.policy.clock.skew=0
+com.sun.identity.agents.config.sso.only=false
+com.sun.identity.agents.config.fqdn.default=atclvm590.athtem.eei.ericsson.se
+com.sun.identity.agents.config.domino.ltpa.config.name=LtpaToken
+com.sun.identity.agents.config.domino.ltpa.cookie.name=LtpaToken
+com.sun.identity.agents.config.profile.attribute.mapping[]=
+com.sun.identity.agents.config.notenforced.ip[0]=
+com.sun.identity.agents.config.userid.param.type=session
+com.sun.identity.agents.config.profile.attribute.cookie.maxage=300
+com.sun.identity.agents.config.url.comparison.case.ignore=true
+com.sun.identity.agents.config.remote.logfile=amAgent_atclvm590_athtem_eei_ericsson_se_443.log
+com.sun.identity.agents.config.domino.ltpa.enable=false
+com.sun.identity.agents.config.notification.enable=true
+com.sun.identity.agents.config.profile.attribute.cookie.prefix=HTTP_
+com.sun.identity.agents.config.polling.interval=60
+com.sun.identity.agents.config.attribute.multi.value.separator=|
+com.sun.identity.agents.config.debug.file.rotate=true
+com.sun.identity.agents.config.debug.level=Error
+com.sun.identity.agents.config.fqdn.mapping[]=
+com.sun.identity.agents.config.local.log.rotate=false
+com.sun.identity.agents.config.repository.location=centralized
+com.sun.identity.agents.config.cookie.reset[0]=
+com.sun.identity.agents.config.client.ip.validation.enable=false
+com.sun.identity.agents.config.override.protocol=false
+com.sun.identity.agents.config.agent.logout.url[0]=
+com.sun.identity.agents.config.ignore.path.info=false
+com.sun.identity.agents.config.override.notification.url=false
+com.sun.identity.agents.config.session.attribute.fetch.mode=NONE
+com.sun.identity.agents.config.policy.cache.polling.interval=3
+com.sun.identity.agents.config.cookie.name=iPlanetDirectoryPro
+com.sun.identity.agents.config.iis.filter.priority=HIGH
+com.sun.identity.client.notification.url=https://atclvm590.athtem.eei.ericsson.se:443/UpdateAgentCacheServlet?shortcircuit=false
+com.sun.identity.agents.config.cookie.secure=false
+com.sun.identity.agents.config.ignore.path.info.for.not.enforced.list=true
+com.sun.identity.agents.config.remote.log.interval=5
+com.sun.identity.agents.config.notenforced.url.invert=false
+com.sun.identity.agents.config.iis.owa.enable.change.protocol=false
+com.sun.identity.agents.config.userid.param=UserToken
+com.sun.identity.agents.config.response.attribute.fetch.mode=NONE
+userpassword={SHA-1}fGphxo74ubawYbKMNIvB7Xkhy1M=
+com.sun.identity.agents.config.log.disposition=REMOTE
+com.sun.identity.agents.config.postdata.preserve.enable=false
+com.sun.identity.agents.config.agenturi.prefix=https://atclvm590.athtem.eei.ericsson.se:443/amagent
+com.sun.identity.agents.config.override.host=false
+com.sun.identity.agents.config.local.log.size=52428800
+com.sun.identity.agents.config.cookie.reset.enable=false
+com.sun.identity.agents.config.session.attribute.mapping[]=
+com.sun.identity.agents.config.debug.file.size=10000000
+com.sun.identity.agents.config.anonymous.user.enable=false
+com.sun.identity.agents.config.change.notification.enable=true
+com.sun.identity.agents.config.cdsso.cdcservlet.url[0]=https://atclvm589.athtem.eei.ericsson.se:443/openam/cdcservlet
+com.sun.identity.agents.config.poll.primary.server=5
+com.sun.identity.agents.config.auth.connection.timeout=2
+com.sun.identity.agents.config.response.attribute.mapping[]=
+com.sun.identity.agents.config.logout.url[0]=https://atclvm589.athtem.eei.ericsson.se:443/openam/UI/Logout
+com.sun.identity.agents.config.ignore.server.check=false
+com.sun.identity.agents.config.fetch.from.root.resource=true
+com.sun.identity.agents.config.redirect.param=goto
+com.sun.identity.agents.config.sso.cache.polling.interval=3
+com.sun.identity.agents.config.anonymous.user.id=anonymous
+com.sun.identity.agents.config.encode.cookie.special.chars.enable=false
+com.sun.identity.agents.config.cdsso.cookie.domain[0]=
+com.sun.identity.agents.config.locale=en_US
+com.sun.identity.agents.config.postcache.entry.lifetime=10
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

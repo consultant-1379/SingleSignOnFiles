@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE Policies 
+PUBLIC "-//OpenSSO Policy Administration DTD//EN"
+"jar://com/sun/identity/policy/policyAdmin.dtd">
+
+<!-- extracted from realm, / -->
+<Policies>
+	<Policy name="FREJA-referral2" referralPolicy="true" active="true" >
+		<Rule name="FREJA-referral-rule2">
+			<ServiceName name="iPlanetAMWebAgentService" />
+			<ResourceName name="http://app.example.com/app2/*" />
+			<ResourceName name="http://app.example.com/app2/*?*" />
+		</Rule>
+		<Referrals name="Referrals:1358093797724xYaxLPI=" description="">
+			<Referral name="FREJA-referral-rule" type="SubOrgReferral">
+				<AttributeValuePair><Attribute name="Values"/>
+					<Value>o=FREJA,ou=services,dc=opensso,dc=java,dc=net</Value>
+				</AttributeValuePair>
+			</Referral>
+		</Referrals>
+	</Policy>
+</Policies>

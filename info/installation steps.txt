@@ -1,0 +1,73 @@
+OPENAM manual installtion steps
+====================================================================================================================================
+
+Step 1: General
+		Default User [amAdmin]		passw0rd
+	
+	Step 2: Server Settings
+		Server URL					http://atrcxb1935.athtem.eei.ericsson.se:8184
+		Cookie Domain				.ericsson.se
+		Platform Locale				en_US
+		Configuration Directory		/var/opt/openAM-10.0.0
+	
+	Step 3: Configuration Data Store Settings	
+		Configuration Store Details 		-	
+			Configuration Data Store	OpenAM 
+			SSL/TLS Enabled				unchecked		
+			Host Name					localhost
+			Port						5555
+			Admin Port					5556
+			JMX Port					5557
+			Encryption Key				5BNnqla7PgYE5ldhuUS7fdxUMmk2zAzX
+			Root Suffix					dc=opensso,dc=java,dc=net
+	
+	Step 4: User Data Store Settings
+			Other User Data Store		selected			
+			User Store Details
+				User Data Store Type	Sun Java System Directory Server
+				SSL/TLS Enabled:		cheked													(SSL Enabled: Check if you want to enable SSL (LDAPS) to connect to the directory server hosting the user data store.)
+				Directory Name:			ethrcxb1628.athtem.eei.ericsson.se						(is the hostname of the directory server that will serve as the user store.)
+				Port:					636														(is the user directory server port number. Default is 389. If SSL Enabled is checked the Port value should the LDAPS port of the directory server instance.)
+				Root Suffix				dc=atrcxb1395-1640,dc=com								(is the user directory server initial or root suffix)
+				Login ID				cn=Directory Manager									(is the administrator who has access to the user directory server.)
+				Password				ldappass	
+
+	Step 5: Site Configuration			
+			Will this instance be deployed behind a load balancer as part of a site configuration?  No/Yes
+				Ans:	No
+			
+			Site Configuration Details:
+				Site Name:			
+				Load Balancer URL:
+	
+	Step 6: Default Policy Agent User
+			These settings are used by OpenAM policy agents for retrieving policy agent properties.
+			
+			Policy Agent User
+			Default Policy Agent [UrlAccessAgent]
+				Password:			defaultpolicyagentpassword			
+				Confirm Password:	defaultpolicyagentpassword
+	
+	Summary:
+		Configurator Summary Details:
+			
+			Configuration Store Details:
+				SSL/TLS Enabled:						No
+				Host Name								localhost 
+				Listening Port							5555 
+				Root Suffix								dc=opensso,dc=java,dc=net 
+				User Name								cn=Directory Manager 
+				Directory Name 	No						$configDirectory			
+			
+			User Store Details:	
+				SSL/TLS Enabled							Yes
+				Host Name								ethrcxb1628.athtem.eei.ericsson.se
+				Listening Port							636
+				Root Suffix								dc=atrcxb1395-1640,dc=com
+				User Name								cn=Directory Manager
+				User Data Store Type 					Sun Java System Directory Server
+				
+			Site Configuration Details:
+				This instance is not setup behind a load balancer 
+	
+	=========================================================================================================

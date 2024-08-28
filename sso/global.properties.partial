@@ -1,0 +1,3 @@
+SSO_COOKIE_DOMAIN=.ericsson.se
+COM_INF_LDAP_PORT=636
+COM_INF_LDAP_ADMIN_CN="directory manager"

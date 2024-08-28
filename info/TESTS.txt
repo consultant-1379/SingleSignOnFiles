@@ -1,0 +1,140 @@
+1. Test Apache is running:	
+	command:				service httpd status
+	expected output:		httpd (pid  XXXX) is running...
+
+6.	Test mod_ssl successfully installed on TOR and OpenAM httpd instances
+
+	command:			httpd -M 2> /dev/null | grep ssl
+	expected output:	ssl_module (shared)
+
+	command:			curl -sLk -w "%{http_code}\n" -o /dev/null https://atvts889.athtem.eei.ericsson.se
+	expected output:	200
+
+3. Test Jboss running:
+	command:				service jboss-eap status
+	expected output:		jboss-eap (pid  XXXX) is running...
+
+	command:				curl -Is http://192.168.0.43:8080 | grep 200
+	expected output:		HTTP/1.1 200 OK
+	
+5.	Test JBoss modules are removed (on sc-1):
+	command:			 /opt/jboss-eap/bin/jboss-cli.sh --connect --commands="cd subsystem,ls" | grep -e 'jaxrs\|webservices'
+	expected output:	null
+	
+7.	Test deployment of openam war file
+		
+	command:			ls -l /var/opt/torsso | grep torsso
+	expected output:	drwxr-xr-x. 2 jboss-eap jboss-eap 4096 Dec  4 13:24 torsso
+
+	command:			ls -l /var/opt/torsso | grep -v "^total" | awk '{print $3":"$4}' | uniq
+	expected output:	jboss-eap:jboss-eap
+
+	command:			/opt/jboss-eap/bin/jboss-cli.sh --connect --command="ls deployment" | grep <filename>
+	expected output: 	<filename>.war
+
+	command:			curl -sLk -w "%{http_code}\n" -o /dev/null http://atvts889.athtem.eei.ericsson.se:8080/<filename>
+	expected output:	200
+
+8.	Test SELinux will allow proxy requests (sc-1 and sc-2)
+
+	command:			getsebool httpd_can_network_connect
+	expected output:	httpd_can_network_connect --> on
+
+9.	Test OpenAM proxy config
+
+	command:			curl -sLk -w "%{http_code}\n" -o /dev/null https://atvts889.athtem.eei.ericsson.se/heimdallr
+	expected output:	200
+
+8. Test initial installation of OpenAM
+
+	command: 			curl -skL -w "%{http_code}\n" -o /dev/null https://atvts889.athtem.eei.ericsson.se/heimdallr/isAlive.jsp
+	expected output:	200
+
+8. 	Test TOR static content was deployed
+	
+	command:			curl -sLk -w "%{http_code}\n" -o /dev/null https://atvts890.athtem.eei.ericsson.se/container
+	expected output:	200
+
+9. Test TOR REST interface .ear was deployed
+	
+	command:			/opt/jboss-eap/bin/jboss-cli.sh -c --command="deloy -l"
+	expected output:	NAME                           RUNTIME-NAME                   ENABLED STATUS
+						presentation-server-1.0.22.ear presentation-server-1.0.22.ear true    OK
+
+	Setup proxy rule for REST interface
+
+		In /etc/httpd/conf.d/10-proxy.conf
+
+	command:			curl -sIk -H "X-Tor-UserId: guest" -w "%{http_code}\n" -o /dev/null https://atvts890.athtem.eei.ericsson.se/container/rest/apps
+	expected output:	200
+
+
+xx. Test SSL connection between OpenAM server and COM-INF user store
+
+	Needs shell access to sc-1
+
+	Confirm /etc/hosts entries (added by LITP/puppet)
+
+		command:			grep "ethrcxb\(170\|1628\)" /etc/hosts
+		expected output:	10.45.206.85    ethrcxb170      ethrcxb170.athtem.eei.ericsson.se ethrcxb170.athtem
+							10.45.206.86    ethrcxb1628     ethrcxb1628.athtem.eei.ericsson.se ethrcxb1628.athtem
+
+	Confirm root-ca certificate is in java keystore
+
+		command:			/usr/java/latest/bin/keytool -list -keystore /usr/java/latest/jre/lib/security/cacerts -storepass changeit -alias torsso-ca
+		expected output:	torsso-ca, 05-Dec-2012, trustedCertEntry,
+							Certificate fingerprint (SHA1): D5:8E:...some HEX data....:90:76:A6
+
+xx. Test Agent Profile was created
+
+	Without the OpenAM command-line admin tool, best way is to log into OpenAM as amadmin/passw0rd
+		
+		command:			Navigate to https://openam/ssoadm.jsp?cmd=list-realms
+							Enter / as the starting point
+		expected output:	FREJA
+
+	Test Profile was created
+		command:			Without the OpenAM command-line admin tool, best way is to log into OpenAM as amadmin/passw0rd
+							Navigate to https://openam/ssoadm.jsp?cmd=list-agents
+							Enter FREJA as Name of realm and submit
+		expected output:	TOR (id=TOR,ou=agentonly,o=FREJA,ou=services,dc=opensso,dc=java,dc=net)
+
+xx. Test SELinux settings on sc-2 for policy agent
+
+	Confirm httpd_can_network_connect boolean set to true
+
+		command:			getsebool httpd_can_network_connect
+		expected output:	httpd_can_network_connect --> on
+
+		command:			secon -t -f /opt/web_agents/apache22_agent/Agent_002/config/*
+		expected output:	httpd_config_t
+
+		command:			secon -t -f /opt/web_agents/apache22_agent/lib/*
+		expected output:	httpd_modules_t
+
+		command:			for i in `find /opt/web_agents/apache22_agent/Agent_002/logs/`; do secon -t -f $i; done | uniq
+		expected output:	httpd_log_t
+
+xx. Test installation JDK 1.6 for Policy agent to install
+
+	command:			java -version | grep 1.6
+	expected output:	java version "1.6.0_24"
+						
+xx. Test installation of Policy Agent (httpd module)
+
+	command: 			httpd -M 2> /dev/null | grep dsame
+	expected output:	dsame_module (shared)
+
+xx. Test SSL configuration of Policy Agent
+
+	command:			/opt/web_agents/apache22_agent/bin/certutil -L -d /opt/web_agents/sslcerts
+	expected output:	Certificate Nickname                                         Trust Attributes
+						                                                             SSL,S/MIME,JAR/XPI
+
+						openam                                                       C,C,C
+
+xx. Test Policy Agent redirects properly (from non-local host)
+
+	command:			curl -ks -w %{redirect_url} https://atvts890.athtem.eei.ericsson.se -o /dev/null
+	expected output:	https://atvts889.athtem.eei.ericsson.se:443/heimdallr/UI/Login?goto=https%3A%2F%2Fatvts890.athtem.eei.ericsson.se%3A443%2F
+

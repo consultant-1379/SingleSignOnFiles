@@ -1,0 +1,91 @@
+#!/bin/bash
+if [ ! -f /tmp/properties.deploy.local ];then
+ echo "Problem, create a file on MS called /tmp/properties.deploy.local with the following variables "
+ echo "LDAP_TO_TEST_AGAINST=atrcxbXXXX"
+ echo "SERVER_TO_TEST_AGAINST=atrcxbXXXX"
+ echo "CONFIG_FILE=/opt/ericsson/nms/litp/bin/deployment/etc/single-node.cfg"
+ echo 'PEER_NODES="SC-1 SC-2"'
+
+ echo "Creating a /tmp/properties.deploy.local, Update it with appropriate values before proceeding "
+ echo "LDAP_TO_TEST_AGAINST=atrcxbXXXX" > /tmp/properties.deploy.local
+ echo "SERVER_TO_TEST_AGAINST=atrcxbXXXX" >> /tmp/properties.deploy.local
+ echo "CONFIG_FILE=/opt/ericsson/nms/litp/bin/deployment/etc/single-node.cfg" >> /tmp/properties.deploy.local
+ echo 'PEER_NODES="SC-1 SC-2"' >> /tmp/properties.deploy.local
+
+ exit 1
+fi
+. /tmp/properties.deploy.local
+
+if [ "${LDAP_TO_TEST_AGAINST}" = "atclvm491" ]; then 
+PIB_PUBLISHED_APP_SUFFIX=ATCLVM722
+LDAP=atclvm491
+LDAP_IP=10.45.206.218
+LDAP_HOSTNAME=atclvm491.athtem.eei.ericsson.se
+LDAP_DOMAIN=atrcxb2594
+LDAP_PWD=ldapadmin
+UAS=atclvm722
+PIB_UAS_IP=10.45.206.126
+PIB_OSS=atrcxb2594ossfs.athtem.eei.ericsson.se
+PIB_PUBLISHED_APP_SUFFIX=ATCLVM722
+fi
+
+if [ "${LDAP_TO_TEST_AGAINST}" = "atrcxb2582" ]; then
+LDAP=atrcxb2582
+LDAP_IP=10.59.132.76
+LDAP_HOSTNAME=atrcxb2582.athtem.eei.ericsson.se
+LDAP_DOMAIN=atrcxb2595-2596
+LDAP_PWD=ldapadmin
+UAS=atrcxb2584
+PIB_UAS_IP=10.59.132.78
+PIB_OSS=atrcxb2595-2596ossfs.athtem.eei.ericsson.se
+PIB_PUBLISHED_APP_SUFFIX=MASTERSERVICE
+fi
+
+if [ "${LDAP_TO_TEST_AGAINST}" = "atrcxb2590" ]; then
+LDAP=atrcxb2590
+OMSAS=atrcxb2588
+LDAP_IP=10.59.132.97
+LDAP_HOSTNAME=atrcxb2590.athtem.eei.ericsson.se
+LDAP_DOMAIN=atrcxb2597-2598
+LDAP_PWD=ldappass
+UAS=atrcxb2591
+PIB_UAS_IP=10.59.132.98
+PIB_OSS=atrcxb2597-2598ossfs.athtem.eei.ericsson.se
+PIB_PUBLISHED_APP_SUFFIX=MASTERSERVICE
+fi
+
+if [ "${SERVER_TO_TEST_AGAINST}" = "atrcxb2748" ]; then
+  APACHE_FQDN=atrcxb2748-10.athtem.eei.ericsson.se
+fi
+if [ "${SERVER_TO_TEST_AGAINST}" = "atrcxb2093" ]; then
+   APACHE_FQDN=atrcxb2093-9.athtem.eei.ericsson.se
+fi
+if [ "${SERVER_TO_TEST_AGAINST}" = "atrcxb2094" ]; then
+   APACHE_FQDN=atrcxb2094-6.athtem.eei.ericsson.se
+fi
+if [ "${SERVER_TO_TEST_AGAINST}" = "atrcxb2750" ]; then
+   APACHE_FQDN=atrcxb2750-10.athtem.eei.ericsson.se
+fi
+if [ "${SERVER_TO_TEST_AGAINST}" = "atrcxb2549" ]; then
+   APACHE_FQDN=atrcxb2549-5.athtem.eei.ericsson.se
+fi
+
+#APACHE_FQDN=apache.eei.ericsson.se
+JBOSS_SSO_ALIAS=sso.${APACHE_FQDN}
+
+CERT_DIR=/tmp/certs
+ROOT_CERT=rootca.cer.${LDAP}
+LIST_OF_CERT_FILES="rootca.cer ssoserverjboss.key ssoserverjboss.csr ssoserverjboss.crt ssoserverjboss.p12 ssoserverapache.key ssoserverapache.csr  ssoserverapache.crt ssoserverapache.p12"
+CERT_LOCATION_ON_PEER_NODES=/ericsson/tor/data/certificates/sso/
+
+SSO_PROPERTIES_FILE=/tmp/global.properties
+SSO_PARTIAL_PROPERTIES_FILE=`basename ${SSO_PROPERTIES_FILE}`.partial
+SSO_PROPERTIES_LOCATION_ON_PEER_NODES=/ericsson/tor/data/
+
+UI_PROPERTY_FILE=/tmp/global.properties
+UI_PROPERTY_FILE_LOCATION=/ericsson/tor/data/
+
+PEER_NODES="SC-1 SC-2"
+PEER1=SC-1
+PEER2=SC-2
+
